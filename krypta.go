@@ -25,7 +25,8 @@ const (
 )
 
 const (
-	version = "2018-03-04a"
+	VERSION = "2018-03-04a"
+	MAXDIFC = 31
 )
 
 func hex256(dwords []int32, separator string) string {
@@ -309,8 +310,40 @@ func keymaster(seedstring string, difc int, progress bool) ([]int32, time.Durati
 	return master, time.Since(t0)
 }
 
-func calibrate() {
-	// TODO
+func calibrate() bool {
+	for difc := 1; difc <= (MAXDIFC + 1); difc++ {
+		fmt.Printf("Trying difficulty %d \n", difc)
+		_, time := keymaster("Xuul", difc, true)
+		ntime := float64(time.Seconds())
+		fmt.Printf("Seconds: %.2f seconds.\n\n", ntime)
+		if ntime >= 10 {
+			fmt.Println("\nCALIBRATION RESULTS FOR THIS MACHINE:")
+			for d := difc; d < MAXDIFC; d++ {
+				t := ntime
+				ts := fmt.Sprintf("%.2f seconds", ntime)
+				if t > 180 {
+					t = t / 60
+					ts = fmt.Sprintf("%.2f minutes", t)
+					if t > 180 {
+						t = t / 60
+						ts = fmt.Sprintf("%.2f hours", t)
+						if t > 72 {
+							t = t / 24
+							ts = fmt.Sprintf("%.2f days", t)
+							if t > 1000 {
+								t = t / 365
+								ts = fmt.Sprintf("%.2f years", t)
+							}
+						}
+					}
+				}
+				fmt.Printf("Difficulty %d takes approx. %s\n", d, ts)
+				ntime = ntime * 2
+			}
+			return true
+		}
+	}
+	return true
 }
 
 func btcPrivkey() {
@@ -406,12 +439,21 @@ type options struct {
 	checksum    int
 	prefix      string
 	no_btc_addr bool
+	calibrate   bool
+	test        bool
 }
 
 func main() {
-	fmt.Printf("gokrypta %s\n", version)
+	fmt.Printf("gokrypta %s\n", VERSION)
 
 	opts := options{}
+
+	flag.BoolVar(&opts.test, "test", false,
+		"Do all self tests, print a test QR code (of random BTC private key) and quit")
+
+	flag.BoolVar(&opts.calibrate, "calibrate", false,
+		"Runs a calibration that shows you how much time (approximately) it takes\n"+
+			"o generate the master key for various difficulties.")
 
 	flag.StringVar(&opts.salt, "salt", SALT,
 		"Specify salt which is combined with your passphrase to generate master key.\n"+
@@ -444,6 +486,17 @@ func main() {
 			"It can be significantly improved.")
 
 	flag.Parse()
+
+	if opts.test {
+		test()
+		os.Exit(0)
+	}
+
+	if opts.calibrate {
+		fmt.Println("Calibrating the difficulty...")
+		calibrate()
+		os.Exit(0)
+	}
 
 	fmt.Printf("STARTING!\n")
 	test()
@@ -551,10 +604,10 @@ func main() {
 				fmt.Printf("(hex:) 256bit hex number: %s\n", hex256(result, ""))
 				fmt.Printf("(hex:) With spaces: %s\n", hex256(result, " "))
 			}
-			var pubkey string
+			/*var pubkey string
 			if !opts.no_btc_addr && (show["btcc"] || show["btcu"]) {
 				pubkey = privkeyToPubkey("0x" + hex256(result, ""))
-			}
+			}*/
 			//privkeys = btc_privkey(result)
 			//fmt.Println(pubkey)
 		}
