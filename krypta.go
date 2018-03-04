@@ -1,20 +1,20 @@
 package main
 
 import (
-	"golang.org/x/crypto/ripemd160"
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"unicode/utf8"
-	"bytes"
 	"flag"
+	"fmt"
+	"golang.org/x/crypto/ripemd160"
+	"log"
 	"math/bits"
+	"os"
 	"regexp"
 	"strings"
-	"os"
 	"time"
-	"log"
-	"fmt"
+	"unicode/utf8"
 )
 
 const (
@@ -89,37 +89,37 @@ func rol(x int32, k int) int32 {
 var pubkeyCache map[string]string
 
 func privkeyToPubkey(secret0 string) string {
-  if len(secret0) <= 30 {
-    log.Fatal("privkeyToPubkey: secret0 bad len")
-  }
-  if val, ok := pubkeyCache[secret0]; ok {
-    fmt.Println("Retrived cached BTC pubkey.")
-    return val
-  }
-  /*newb := func(f int64) *big.Float { return new(big.Float).SetInt(big.NewInt(f)) }
-  parb := func(s string) *big.Float {
-    fn := new(big.Float)
-    fp, _, _ := fn.Parse(s, 2)
-    return fp.Set(fp)
-  }
-  one := newb(1)
-  two := newb(2)
-  three := newb(3)
-  p := parb("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")
-  gx := parb("0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798")
-  gy := parb("0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8")
-  order := parb("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")
-  secret := parb(secret0)
+	if len(secret0) <= 30 {
+		log.Fatal("privkeyToPubkey: secret0 bad len")
+	}
+	if val, ok := pubkeyCache[secret0]; ok {
+		fmt.Println("Retrived cached BTC pubkey.")
+		return val
+	}
+	/*newb := func(f int64) *big.Float { return new(big.Float).SetInt(big.NewInt(f)) }
+	  parb := func(s string) *big.Float {
+	    fn := new(big.Float)
+	    fp, _, _ := fn.Parse(s, 2)
+	    return fp.Set(fp)
+	  }
+	  one := newb(1)
+	  two := newb(2)
+	  three := newb(3)
+	  p := parb("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")
+	  gx := parb("0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798")
+	  gy := parb("0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8")
+	  order := parb("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")
+	  secret := parb(secret0)
 
-  inverseMod := func(a *big.Float) {
-    if a.Cmp(p) < 1 {
-      a = a.Mod(p)
-    }
-  }
+	  inverseMod := func(a *big.Float) {
+	    if a.Cmp(p) < 1 {
+	      a = a.Mod(p)
+	    }
+	  }
 
-  fmt.Printf("one = %v, two = %v, three = %v, p = %p\n", one, two, three, p)
-  return ""*/
-  return ""
+	  fmt.Printf("one = %v, two = %v, three = %v, p = %p\n", one, two, three, p)
+	  return ""*/
+	return ""
 }
 
 func binToAnyModule() func() {
@@ -128,7 +128,7 @@ func binToAnyModule() func() {
 }
 
 func dwordsToChars(ns []int32) string {
-  var out []string
+	var out []string
 	for _, dword := range ns {
 		for i := 0; i < 4; i++ {
 			dword = int32(bits.RotateLeft32(uint32(dword), 8))
@@ -310,15 +310,15 @@ func keymaster(seedstring string, difc int, progress bool) ([]int32, time.Durati
 }
 
 func calibrate() {
-  // TODO
+	// TODO
 }
 
 func btcPrivkey() {
-  // TODO
+	// TODO
 }
 
 func wif() {
-  // TODO
+	// TODO
 }
 
 func checkwords(str string, howmany int) string {
@@ -333,7 +333,6 @@ func checkwords(str string, howmany int) string {
 	return strings.Join(result, " ")
 }
 
-
 type prefixes map[string]bool
 
 func getAllPrefixes() prefixes {
@@ -344,7 +343,6 @@ func getAllPrefixes() prefixes {
 	}
 	return p
 }
-
 
 func test() {
 	fmt.Printf("Running self-tests.\n")
@@ -402,13 +400,12 @@ func test() {
 	fmt.Println("All self-tests OK")
 }
 
-
 type options struct {
-	salt       string
-	difficulty int
-	checksum   int
-	prefix     string
-  no_btc_addr bool
+	salt        string
+	difficulty  int
+	checksum    int
+	prefix      string
+	no_btc_addr bool
 }
 
 func main() {
@@ -440,11 +437,11 @@ func main() {
 			"all prefixes (the same result as entering index \"xyz\" when no default\n"+
 			"prefix is set).")
 
-  flag.BoolVar(&opts.no_btc_addr, "no_btc_addr", false,
-    "Disables generating BTC addresses (and saves a few seconds of time).\n" +
-    "Note that BTC private keys generation is still enabled because it's fast.\n" +
-    "The BTC address generation algorithm is currently very naive and rather slow.\n" +
-    "It can be significantly improved.")
+	flag.BoolVar(&opts.no_btc_addr, "no_btc_addr", false,
+		"Disables generating BTC addresses (and saves a few seconds of time).\n"+
+			"Note that BTC private keys generation is still enabled because it's fast.\n"+
+			"The BTC address generation algorithm is currently very naive and rather slow.\n"+
+			"It can be significantly improved.")
 
 	flag.Parse()
 
@@ -552,14 +549,14 @@ func main() {
 
 			if show["hex"] {
 				fmt.Printf("(hex:) 256bit hex number: %s\n", hex256(result, ""))
-        fmt.Printf("(hex:) With spaces: %s\n", hex256(result, " "))
+				fmt.Printf("(hex:) With spaces: %s\n", hex256(result, " "))
 			}
-      var pubkey string
-      if !opts.no_btc_addr && (show["btcc"] || show["btcu"]) {
-        pubkey = privkeyToPubkey("0x" + hex256(result, ""))
-      }
-      //privkeys = btc_privkey(result)
-      //fmt.Println(pubkey)
+			var pubkey string
+			if !opts.no_btc_addr && (show["btcc"] || show["btcu"]) {
+				pubkey = privkeyToPubkey("0x" + hex256(result, ""))
+			}
+			//privkeys = btc_privkey(result)
+			//fmt.Println(pubkey)
 		}
 	}
 }
