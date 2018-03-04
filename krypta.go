@@ -311,14 +311,14 @@ func keymaster(seedstring string, difc int, progress bool) ([]int32, time.Durati
 }
 
 func calibrate() bool {
-	for difc := 1; difc <= (MAXDIFC + 1); difc++ {
+	for difc := 1; difc <= MAXDIFC; difc++ {
 		fmt.Printf("Trying difficulty %d \n", difc)
 		_, time := keymaster("Xuul", difc, true)
 		ntime := float64(time.Seconds())
 		fmt.Printf("Seconds: %.2f seconds.\n\n", ntime)
 		if ntime >= 10 {
 			fmt.Println("\nCALIBRATION RESULTS FOR THIS MACHINE:")
-			for d := difc; d < MAXDIFC; d++ {
+			for d := difc; d <= MAXDIFC; d++ {
 				t := ntime
 				ts := fmt.Sprintf("%.2f seconds", ntime)
 				if t > 180 {
