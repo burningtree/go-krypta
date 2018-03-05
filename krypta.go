@@ -77,8 +77,7 @@ func assert(a interface{}, b interface{}, msg string) {
 }
 
 func lrshift(n int32, shft uint32) int32 {
-	maxnum := int32(^uint32(0) >> 1)
-	return (n >> shft) & (maxnum >> (shft - 1))
+	return (n >> shft) & (0x7fffffff >> (shft - 1))
 }
 
 func rol(x int32, k int) int32 {
@@ -221,38 +220,41 @@ func bitstream(rem_bits []int32) func(take int) int32 {
 	}
 }
 
-func newShifter(state int) (func() bool, func() int) {
+func newShifter(state int64) (func() bool, func() int64) {
 	if state == 0 {
 		state = 1
 	}
 	return func() bool {
 			bt := state & 1
-			state = int(lrshift(int32(state), 1))
+			state = int64(lrshift(int32(state), 1))
 			if bt == 1 {
 				state = state ^ 0xa3000000
 				return true
 			}
 			return false
-		}, func() int {
+		}, func() int64 {
 			return state
 		}
 }
 
 func newRandom(dwords []int32) (func() int32, func() []int32) {
 	w, x, y, z := dwords[0], dwords[1], dwords[2], dwords[3]
-	sh1, sh1d := newShifter(int(dwords[4]))
-	sh2, sh2d := newShifter(int(dwords[5]))
-	sh3, sh3d := newShifter(int(dwords[6]))
-	sh4, sh4d := newShifter(int(dwords[7]))
+	sh1, sh1d := newShifter(int64(dwords[4]))
+	sh2, sh2d := newShifter(int64(dwords[5]))
+	sh3, sh3d := newShifter(int64(dwords[6]))
+	sh4, sh4d := newShifter(int64(dwords[7]))
 
 	if (w | x | y | z) == 0 {
 		w, x, y, z = 0, 0, 0, 1
 	}
 	fun := func() int32 {
-		for ok := true; ok; ok = !(sh1() || sh2() || sh3() || sh4()) {
+		for {
 			var t int32 = x ^ (x << uint(11))
 			x, y, z = y, z, w
 			w = w ^ lrshift(w, 19) ^ t ^ lrshift(t, 8)
+			if sh1() || sh2() || sh3() || sh4() {
+				break
+			}
 		}
 		return w
 	}
@@ -300,9 +302,11 @@ func keymaster(seedstring string, difc int, progress bool) ([]int32, time.Durati
 		for i := 0; i < int(one64); i++ {
 			difmask = int32(bits.RotateLeft32(uint32(difmask), -int(rnd()&31)))
 			seek := difmask & rnd()
-			var got int32
-			for ok := true; ok; ok = !(got == seek) {
-				got = difmask & rnd()
+			for {
+				got := difmask & rnd()
+				if got == seek {
+					break
+				}
 			}
 		}
 	}
@@ -402,7 +406,7 @@ func test() {
 	for i := 0; i < 100; i++ {
 		sh()
 	}
-	assert(int(shDump()), 0x8d8aa8c3, "")
+	assert(int64(shDump()), int64(0x8d8aa8c3), "")
 
 	dwords := []int32{1, 0}
 	assert(bip39(dwords), "abandon abandon able abandon abandon about", "")
